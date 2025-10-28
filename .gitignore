@@ -1,0 +1,25 @@
+## IDE folders
+**/.idea/
+**/.vscode/
+
+## Terraform files
+**/.terraform/
+*.tfstate*
+.terraform.lock.hcl
+plan*
+
+## Packages
+*.zip
+**/modules/
+
+## logs
+**/log
+*.log*
+
+## PDF
+**/results
+*.pdf
+
+# OS files
+.DS_Store
+Thumbs.db

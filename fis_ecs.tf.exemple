@@ -1,0 +1,58 @@
+resource "aws_fis_experiment_template" "ecs_failure_pod" {
+  description = "Perturbe le trafic sur les pods taggués pra_latency=true"
+  role_arn    = aws_iam_role.fis_experiment_role.arn
+  # Condition d'arrêt : stopper si l'alarme CloudWatch se déclenche
+  stop_condition {
+    source = "none"
+  }
+  # Cible : pod taggées pra_latency=true (50% des instances)
+  target {
+    name           = "pod-target"
+    resource_type  = "aws:eks:pod"
+    selection_mode = "COUNT(1)"
+    parameters = {
+      clusterIdentifier = "arn:aws:eks:eu-west-1:<ACCOUNTID>:cluster/<CLUSTERNAME>"
+      namespace         = "<NAMESPACE>"
+      selectorType      = "labelSelector"
+      selectorValue     = "app=<NAMESPACE>"
+    }
+  }
+  # Action : disruption réseau (clonage d'ACL réseau) pour 5 minutes
+  action {
+    action_id   = "aws:eks:pod-network-latency"
+    name        = "pod-network-latency"
+    description = "run network latency on pod"
+    parameter {
+      key   = "kubernetesServiceAccount"
+      value = var.fis_eks_service_account
+    }
+    parameter {
+      key   = "duration"
+      value = "PT5M" # 5 minutes = 300s
+    }
+    #Light LATENCY="50ms" JITTER="5ms"
+    #Severe LATENCY="200ms" JITTER="50ms"
+    parameter {
+      key   = "delayMilliseconds"
+      value = "50"
+    }
+    parameter {
+      key   = "jitterMilliseconds"
+      value = "5"
+    }
+    target {
+      key   = "Pods"
+      value = "pod-target"
+    }
+  }
+  log_configuration {
+    log_schema_version = "2"
+    s3_configuration {
+      bucket_name = aws_s3_bucket.fis_experiment_reports.bucket
+      prefix      = "fis-eks-pod-network-latency"
+    }
+  }
+  tags = {
+    Name = "fis-eks-pod-network-latency"
+  }
+}
