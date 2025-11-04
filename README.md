@@ -4,58 +4,51 @@
 
 Implémenter AWS FIS pour valider la résilience dans le Cloud. Ce dépôt fournit un exemple de template FIS, un dashboard CloudWatch et des alarmes pour arrêter l'expérience si des seuils critiques sont atteints.
 
-### But
+## 🧭 Introduction
 
-- Exemple de template AWS FIS pour tester la résilience : terminer une instance EC2 d'un ASG et injecter de la latence I/O sur les volumes EBS.
-- Fournit également un dashboard CloudWatch et des alarmes (certaines alarmes EBS sont commentées par défaut).
+| 🇫🇷 Français                                                                                                                                                                                                                                                                                                                                      | 🇬🇧 English                                                                                                                                                                                                                                                                                                                           |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Du Plan de Reprise d’Activité à l’expérimentation du Chaos<br>Ce dépôt montre comment utiliser AWS FIS pour valider la résilience d’une architecture Cloud. Il fournit un exemple de template FIS, un dashboard CloudWatch et des alarmes pour stopper l’expérience si des seuils critiques sont atteints. | From Disaster Recovery Planning to Chaos Engineering<br>This repository demonstrates how to use AWS FIS to validate the resilience of a Cloud architecture. It provides an example FIS template, a CloudWatch dashboard, and alarms to stop the experiment if critical thresholds are reached. |
 
-### Prérequis
 
-- Terraform (>= 1.0)
-- AWS CLI configuré (credentials / profile) ou variables d'environnement AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
-- Compte AWS avec droits suffisants pour créer IAM, EC2, CloudWatch, FIS, S3, RDS, ALB, CloudWatch Logs
+## 🎯 But / Purpose
 
-### Ce qui est déployé (fichiers principaux)
+| 🇫🇷 Français                                                                                                                                                                                                                                                     | 🇬🇧 English                                                                                                                                                                                                                         |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| - Exemple de template AWS FIS pour tester la résilience : terminer une instance EC2 d’un ASG et injecter de la latence I/O sur les volumes EBS.<br>- Fournit également un dashboard CloudWatch et des alarmes (certaines alarmes EBS sont commentées par défaut). | - Example of an AWS FIS template to test resilience: terminate an EC2 instance in an ASG and inject I/O latency on EBS volumes.<br>- Also provides a CloudWatch dashboard and alarms (some EBS alarms are commented out by default). |
 
-Voici une vue synthétique des fichiers et des ressources qu'ils définissent dans ce projet :
 
-- `fis.tf`
-  - `aws_fis_experiment_template.web_instance_failure` : template FIS principal
-    - targets : `WebInstances` (instances taggées `Service=web`), `Volumes-Target-azA` et `Volumes-Target-azB` (volumes EBS filtrés par zone/tags)
-    - actions : `TerminateInstance` (terminer une instance) et `Volume_IO_Latency_*` (injecter latence I/O sur volumes EBS)
-    - stop_conditions : références vers alarmes CloudWatch (ALB, RDS, et possibilité d'alarmes EBS)
-    - configuration de rapport d'expérience (S3) et logs CloudWatch
+## ⚙️ Prérequis / Prerequisites
 
-- `cloudwatch.tf`
-  - `aws_cloudwatch_dashboard.fis_dashboard` : dashboard CloudWatch pour monitoring FIS
-  - alarmes : `aws_cloudwatch_metric_alarm.alb_5xx_alarm`, `alb_latency_alarm`, `rds_connections_alarm`
-  - (optionnel/commenté) alarmes EBS pour latence read/write (créées par `for_each` sur les volumes)
+| 🇫🇷 Français                                                                                                                                                                                                                                             | 🇬🇧 English                                                                                                                                                                                                                                                |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| - Terraform (>= 1.0)<br>- AWS CLI configuré (credentials / profile) ou variables d'environnement `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`<br>- Compte AWS avec droits suffisants pour créer IAM, EC2, CloudWatch, FIS, S3, RDS, ALB, CloudWatch Logs | - Terraform (>= 1.0)<br>- Configured AWS CLI (credentials / profile) or environment variables `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`<br>- AWS account with sufficient permissions to create IAM, EC2, CloudWatch, FIS, S3, RDS, ALB, CloudWatch Logs |
 
-- `main.tf`
-  - VPC, subnets, security groups, ALB (`aws_lb.web_alb`), target group (`aws_lb_target_group.web_tg`), launch template (`aws_launch_template.web_lt`) et autoscaling group (`aws_autoscaling_group.web_asg`)
+### 🗂️ Ce qui est déployé / Deployed Resources
 
-- `iam.tf`
-  - rôle IAM pour FIS (`aws_iam_role.fis_experiment_role`) et policies requises
+| 🇫🇷 Français                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | 🇬🇧 English                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Fichiers principaux :**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | **Main files:**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| - `fis.tf`<br>  - `aws_fis_experiment_template.web_instance_failure` : template FIS principal<br>    - targets : `WebInstances` (instances taggées `Service=web`), `Volumes-Target-azA` et `Volumes-Target-azB` (volumes EBS filtrés par zone/tags)<br>    - actions : `TerminateInstance` (terminer une instance) et `Volume_IO_Latency_*` (injecter latence I/O sur volumes EBS)<br>    - stop_conditions : références vers alarmes CloudWatch (ALB, RDS, et possibilité d’alarmes EBS)<br>    - configuration de rapport d’expérience (S3) et logs CloudWatch | - `fis.tf`<br>  - `aws_fis_experiment_template.web_instance_failure`: main FIS template<br>    - targets: `WebInstances` (instances tagged `Service=web`), `Volumes-Target-azA` and `Volumes-Target-azB` (EBS volumes filtered by zone/tags)<br>    - actions: `TerminateInstance` (terminate an instance) and `Volume_IO_Latency_*` (inject I/O latency on EBS volumes)<br>    - stop_conditions: references CloudWatch alarms (ALB, RDS, optional EBS alarms)<br>    - experiment reporting (S3) and CloudWatch logs |
+| - `cloudwatch.tf`<br>  - `aws_cloudwatch_dashboard.fis_dashboard` : dashboard CloudWatch pour le monitoring FIS<br>  - alarmes : `aws_cloudwatch_metric_alarm.alb_5xx_alarm`, `alb_latency_alarm`, `rds_connections_alarm`<br>  - (optionnel/commenté) alarmes EBS pour latence read/write (créées par `for_each` sur les volumes)                                                                                                                                                                                                                               | - `cloudwatch.tf`<br>  - `aws_cloudwatch_dashboard.fis_dashboard`: CloudWatch dashboard for FIS monitoring<br>  - alarms: `aws_cloudwatch_metric_alarm.alb_5xx_alarm`, `alb_latency_alarm`, `rds_connections_alarm`<br>  - (optional/commented) EBS read/write latency alarms (created using `for_each` on volumes)                                                                                                                                                                                                    |
+| - `main.tf`<br>  - VPC, subnets, security groups, ALB (`aws_lb.web_alb`), target group (`aws_lb_target_group.web_tg`), launch template (`aws_launch_template.web_lt`) et autoscaling group (`aws_autoscaling_group.web_asg`)                                                                                                                                                                                                                                                                                                                                     | - `main.tf`<br>  - VPC, subnets, security groups, ALB (`aws_lb.web_alb`), target group (`aws_lb_target_group.web_tg`), launch template (`aws_launch_template.web_lt`) and autoscaling group (`aws_autoscaling_group.web_asg`)                                                                                                                                                                                                                                                                                          |
+| - `iam.tf`<br>  - rôle IAM pour FIS (`aws_iam_role.fis_experiment_role`) et policies requises                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | - `iam.tf`<br>  - IAM role for FIS (`aws_iam_role.fis_experiment_role`) and required policies                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| - `keypair.tf`, `provider.tf`, `local.tf`, `data.tf`, `output.tf` : configuration AWS, données (AMIs, volumes…), outputs et variables locales                                                                                                                                                                                                                                                                                                                                                                                                                    | - `keypair.tf`, `provider.tf`, `local.tf`, `data.tf`, `output.tf`: AWS configuration, data (AMIs, volumes…), outputs and local variables                                                                                                                                                                                                                                                                                                                                                                               |
+| - `userdata.sh` : script d’init pour les instances                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | - `userdata.sh`: initialization script for instances                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| - `fis_subnet.tf`, `fis_ecs.tf.exemple` : exemples et snippets supplémentaires pour cibler des sous-réseaux ou ECS                                                                                                                                                                                                                                                                                                                                                                                                                                               | - `fis_subnet.tf`, `fis_ecs.tf.exemple`: examples and snippets to target subnets or ECS                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| - `errored.tfstate`, `log/`, `results/` : fichiers d’état et données de sortie (logs, résultats)                                                                                                                                                                                                                                                                                                                                                                                                                                                                 | - `errored.tfstate`, `log/`, `results/`: state files and output data (logs, results)                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| **Remarque :** certaines ressources (ex. volumes EBS via `data.aws_ebs_volumes`) sont attendues par les alarmes EBS/commentaires. Adaptez ou fournissez les data sources si nécessaire.                                                                                                                                                                                                                                                                                                                                                                          | **Note:** some resources (e.g., EBS volumes via `data.aws_ebs_volumes`) are expected by EBS alarms/comments. Adjust or provide data sources if necessary.                                                                                                                                                                                                                                                                                                                                                              |
 
-- `keypair.tf`, `provider.tf`, `local.tf`, `data.tf`, `output.tf` : configuration AWS, données (AMIs, volumes...), outputs et variables locales
 
-- `userdata.sh` : script d'init pour les instances
+## 🗂️ Arborescence du dépôt / Repository Structure
 
-- `fis_subnet.tf`, `fis_ecs.tf.exemple` : exemples et snippets supplémentaires pour cibler des sous-réseaux ou ECS (exemple)
-
-- `errored.tfstate`, `log/`, `results/` : fichiers d'état et données de sortie (logs, résultats)
-
-Remarque : certaines ressources (par ex. volumes EBS recherchés via `data.aws_ebs_volumes`) sont attendues par les alarmes EBS/commentaires — adaptez ou fournissez les data sources si nécessaire.
-
-## Arborescence du dépôt
-
-Arbre simplifié des fichiers à la racine du projet :
+| 🇫🇷 Français                                        | 🇬🇧 English                          |
+| ---------------------------------------------------- | ------------------------------------- |
+| Arbre simplifié des fichiers à la racine du projet : | Simplified file tree at project root: |
 
 ```text
 .git/
 .gitignore
-.terraform/
-.terraform.lock.hcl
 README.md
 cloudwatch.tf
 data.tf
@@ -66,256 +59,55 @@ fis_subnet.tf
 iam.tf
 keypair.tf
 local.tf
-log/
 main.tf
 output.tf
 provider.tf
-results/
 userdata.sh
 ```
 
-Si tu veux que je génère un arbre plus détaillé (avec fichiers dans `log/` ou `results/`), je peux lister et l'ajouter.
+### ⚠️ Points d’attention - Actions manuelles possible / Warnings - Manual Actions
 
-### Points d'attention / actions manuelles possibles
+| 🇫🇷 Français                                                                                                                                                                                                                                                                                                                                                                                                                          | 🇬🇧 English                                                                                                                                                                                                                                                                                                                                                                                              |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Alarmes EBS :**<br>- Les alarmes EBS sont commentées dans `cloudwatch.tf`. Si vous souhaitez que les `stop_conditions` dynamiques dans `fis.tf` soient valides, décommentez les ressources `aws_cloudwatch_metric_alarm` (ebs_read_latency_alarm / ebs_write_latency_alarm) et exécutez `terraform apply`.<br>- Alternative : si vous ne voulez pas créer ces alarmes, supprimez les blocs `dynamic "stop_condition"` dans `fis.tf`. | **EBS Alarms:**<br>- EBS alarms are commented in `cloudwatch.tf`. If you want dynamic `stop_conditions` in `fis.tf` to be valid, uncomment the `aws_cloudwatch_metric_alarm` resources (ebs_read_latency_alarm / ebs_write_latency_alarm) and run `terraform apply`.<br>- Alternative: if you don’t want to create these alarms, remove the `dynamic "stop_condition"` blocks in `fis.tf`.                |
+| **Permissions pour le rôle FIS :**<br>- L’action `aws:ebs:volume-io-latency` nécessite des permissions SSM/EC2. Assurez-vous que `aws_iam_role.fis_experiment_role` a les permissions nécessaires (ex. `ec2:Describe*`, `ec2:AttachVolume`, `ec2:DetachVolume`, `ssm:SendCommand`, `iam:PassRole`). Pour test rapide, attachez les policies managées `AmazonEC2FullAccess` et `AmazonSSMFullAccess` (à restreindre ensuite).           | **Permissions for FIS Role:**<br>- The action `aws:ebs:volume-io-latency` requires SSM/EC2 permissions. Ensure `aws_iam_role.fis_experiment_role` has the necessary permissions (e.g., `ec2:Describe*`, `ec2:AttachVolume`, `ec2:DetachVolume`, `ssm:SendCommand`, `iam:PassRole`). For quick testing, attach managed policies `AmazonEC2FullAccess` and `AmazonSSMFullAccess` (then restrict as needed). |
 
-- Alarmes EBS
-  - Les alarmes EBS sont commentées dans `cloudwatch.tf`. Si vous souhaitez que les `stop_conditions` dynamiques dans `fis.tf` soient valides, décommentez les ressources `aws_cloudwatch_metric_alarm` (ebs_read_latency_alarm / ebs_write_latency_alarm) et exécutez `terraform apply`.
-  - Alternative : si vous ne voulez pas créer ces alarmes, supprimez les blocs `dynamic "stop_condition"` dans `fis.tf` pour éviter des références vides.
+## 🏗️ Exemples de commandes / Example Commands
 
-- Permissions pour le rôle FIS
-  - L'action `aws:ebs:volume-io-latency` nécessite des permissions SSM/EC2. Assurez-vous que `aws_iam_role.fis_experiment_role` a les permissions nécessaires (ex. `ec2:Describe*`, `ec2:AttachVolume`, `ec2:DetachVolume`, `ssm:SendCommand`, `iam:PassRole`). Pour test rapide, attachez les policies managées `AmazonEC2FullAccess` et `AmazonSSMFullAccess` (à restreindre ensuite).
+| 🇫🇷 Français                                                                                                                                                                                                                                                                                                                        | 🇬🇧 English                                                                                                                                                                                                                                                                                                        |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| # Initialiser et planifier<br>`terraform init`<br>`terraform plan -var="region=eu-west-1"`<br><br> # Appliquer<br>`terraform apply -var="region=eu-west-1"`<br><br># Déployer uniquement dashboard et alarmes<br>`terraform apply -target=aws_cloudwatch_dashboard.fis_dashboard -target=aws_cloudwatch_metric_alarm.alb_5xx_alarm` | # Initialize and plan<br>`terraform init`<br>`terraform plan -var="region=eu-west-1"`<br><br># Apply<br>`terraform apply -var="region=eu-west-1"`<br><br># Deploy dashboard and alarms only<br>`terraform apply -target=aws_cloudwatch_dashboard.fis_dashboard -target=aws_cloudwatch_metric_alarm.alb_5xx_alarm` |
 
-## Exemples de commandes
 
-```bash
-# Initialiser et planifier
-terraform init
-terraform plan -var="region=eu-west-1"
+## 🛠️ Dépannage rapide / Quick Troubleshooting
 
-# Appliquer
-terraform apply -var="region=eu-west-1"
+| 🇫🇷 Français                                                                                                                                                                                                                                                                                                                                                                                                | 🇬🇧 English                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| - **Erreur "Missing resource instance key"** : se produit lorsque l’on tente d’accéder à une ressource créée avec `for_each` sans index. Utilisez `aws_cloudwatch_metric_alarm.name[key]` ou générez dynamiquement les `stop_condition` (cf. `fis.tf`).<br>- **Erreur FIS `AuthorizationFailure`** pendant une action (ex. `volume-io-latency`) : attachez aux IAM role les permissions SSM/EC2 nécessaires. | - **Error "Missing resource instance key"**: occurs when trying to access a resource created with `for_each` without an index. Use `aws_cloudwatch_metric_alarm.name[key]` or dynamically generate `stop_condition` (see `fis.tf`).<br>- **FIS Error `AuthorizationFailure`** during an action (e.g., `volume-io-latency`): attach required SSM/EC2 permissions to the IAM role. |
 
-# Pour déployer uniquement le dashboard et les alarmes (si modifications ciblées)
-terraform apply -target=aws_cloudwatch_dashboard.fis_dashboard -target=aws_cloudwatch_metric_alarm.alb_5xx_alarm
-```
 
-## Dépannage rapide
+## 💻 Commandes destructives / Useful Destructive Commands
 
-- Erreur "Missing resource instance key" : signifie qu'on tente d'accéder à une ressource créée avec `for_each` sans index ; utiliser `aws_cloudwatch_metric_alarm.name[key]` ou générer dynamiquement les `stop_condition` (cf. `fis.tf`).
-- Erreur FIS `AuthorizationFailure` pendant une action (ex. `volume-io-latency`) : attacher aux IAM role les permissions SSM/EC2 nécessaires.
+| 🇫🇷 Français                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | 🇬🇧 English                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| # Forcer suppression d’un volume EBS (perte de données)<br>`aws ec2 detach-volume --volume-id vol-01234567890 --force --region eu-west-1`<br>`aws ec2 wait volume-available --volume-ids vol-01234567890 --region eu-west-1`<br>`aws ec2 delete-volume --volume-id vol-01234567890 --region eu-west-1`<br><br># Supprimer un secret (Secrets Manager)<br>`aws secretsmanager delete-secret --secret-id <nom-ou-arn> --force-delete-without-recovery --region eu-west-1` | # Force delete an EBS volume (data loss)<br>`aws ec2 detach-volume --volume-id vol-01234567890 --force --region eu-west-1`<br>`aws ec2 wait volume-available --volume-ids vol-01234567890 --region eu-west-1`<br>`aws ec2 delete-volume --volume-id vol-01234567890 --region eu-west-1`<br><br># Delete a secret immediately (Secrets Manager)<br>`aws secretsmanager delete-secret --secret-id <name-or-arn> --force-delete-without-recovery --region eu-west-1` |
 
-### Commandes utiles (attention : opérations destructrices)
 
-```bash
-# Pour forcer suppression d'un volume EBS (danger : perte de données)
-aws ec2 detach-volume --volume-id vol-0f67b384aa1bd9ee7 --force --region eu-west-1
-aws ec2 wait volume-available --volume-ids vol-0f67b384aa1bd9ee7 --region eu-west-1
-aws ec2 delete-volume --volume-id vol-0f67b384aa1bd9ee7 --region eu-west-1
+## ✅ Bonnes pratiques / Best Practices
 
-# Pour supprimer un secret immédiatement (Secrets Manager)
-aws secretsmanager delete-secret --secret-id <nom-ou-arn> --force-delete-without-recovery --region eu-west-1
-```
+| 🇫🇷 Français                                                                                                                                                                                                                         | 🇬🇧 English                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| - Restreindre les permissions IAM du rôle FIS à un policy minimal pour production.<br>- Tester d’abord sur un compte ou environnement non critique.<br>- Vérifier que les tags `Service=web` existent bien sur vos volumes/instances. | - Restrict IAM permissions of the FIS role to a minimal policy for production.<br>- Test first on a non-critical account or environment.<br>- Ensure that `Service=web` tags exist on your volumes/instances. |
 
-## Bonnes pratiques
 
-- Restreindre les permissions IAM du rôle FIS à un policy minimal pour production.
-- Tester d'abord sur un compte ou environnement non critique.
-- Vérifier que les tags `Service=web` existent bien sur vos volumes/instances attendus.
+## 👤 Auteurs / Authors
 
-## Auteurs
+| 🇫🇷 Français                                                                                                                                                                                                                                                                                      | 🇬🇧 English                                                                                                                                                                                                                                                                                |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| - Benjamin TOULOT-VERDIER — Devoteam A Cloud<br>  - Société : Devoteam A Cloud<br>  - Site : [https://www.devoteam.com](https://www.devoteam.com)<br>  - Pour toute question ou contribution : ouvrez une issue dans ce dépôt ou contactez l’auteur via les canaux internes de votre organisation. | - Benjamin TOULOT-VERDIER — Devoteam A Cloud<br>  - Company: Devoteam A Cloud<br>  - Website: [https://www.devoteam.com](https://www.devoteam.com)<br>  - For questions or contributions: open an issue in this repository or contact the author via your organization’s internal channels. |
 
-- Benjamin TOULOT-VERDIER — Devoteam A Cloud
 
-  - Société : Devoteam A Cloud
-  - Site : [https://www.devoteam.com](https://www.devoteam.com)
-  - Pour toute question ou contribution : ouvrez une issue dans ce dépôt ou contactez l'auteur via les canaux internes de votre organisation.
-
-## Liens utiles
-
-- Terraform resource (AWS FIS experiment template) : [https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/fis_experiment_template](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/fis_experiment_template)
-- AWS Fault Injection Service (FIS) — documentation utilisateur : [https://docs.aws.amazon.com/fis/latest/userguide/what-is-fis.html](https://docs.aws.amazon.com/fis/latest/userguide/what-is-fis.html)
-- CloudWatch Metric Alarm (docs) : [https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html)
-# AWS Fault Injection Service
-
-## Du Plan de Reprise d’Activité à l’expérimentation du Chaos - Implémenter AWS FIS pour valider la résilience dans le Cloud
-
-
-### But
-
-- Exemple de template AWS FIS pour tester la résilience : terminer une instance EC2 d'un ASG et injecter de la latence I/O sur les volumes EBS.
-- Fournit également un dashboard CloudWatch et des alarmes (certaines alarmes EBS sont commentées par défaut).
-
-### Prérequis
-
-- Terraform (>= 1.0)
-- AWS CLI configuré (credentials / profile) ou variables d'environnement AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
-- Compte AWS avec droits suffisants pour créer IAM, EC2, CloudWatch, FIS, S3, RDS, ALB, CloudWatch Logs
-
-### Ce qui est déployé (fichiers principaux)
-
-Voici une vue synthétique des fichiers et des ressources qu'ils définissent dans ce projet :
-
-- `fis.tf`
-  - `aws_fis_experiment_template.web_instance_failure` : template FIS principal
-    - targets : `WebInstances` (instances taggées `Service=web`), `Volumes-Target-azA` et `Volumes-Target-azB` (volumes EBS filtrés par zone/tags)
-    - actions : `TerminateInstance` (terminer une instance) et `Volume_IO_Latency_*` (injecter latence I/O sur volumes EBS)
-    - stop_conditions : références vers alarmes CloudWatch (ALB, RDS, et possibilité d'alarmes EBS)
-    - configuration de rapport d'expérience (S3) et logs CloudWatch
-
-- `cloudwatch.tf`
-  - `aws_cloudwatch_dashboard.fis_dashboard` : dashboard CloudWatch pour monitoring FIS
-  - alarmes : `aws_cloudwatch_metric_alarm.alb_5xx_alarm`, `alb_latency_alarm`, `rds_connections_alarm`
-  - (optionnel/commenté) alarmes EBS pour latence read/write (créées par `for_each` sur les volumes)
-
-- `main.tf`
-  - VPC, subnets, security groups, ALB (`aws_lb.web_alb`), target group (`aws_lb_target_group.web_tg`), launch template (`aws_launch_template.web_lt`) et autoscaling group (`aws_autoscaling_group.web_asg`)
-
-- `iam.tf`
-  - rôle IAM pour FIS (`aws_iam_role.fis_experiment_role`) et policies requises
-
-- `keypair.tf`, `provider.tf`, `local.tf`, `data.tf`, `output.tf` : configuration AWS, données (AMIs, volumes...), outputs et variables locales
-
-- `userdata.sh` : script d'init pour les instances
-
-- `fis_subnet.tf`, `fis_ecs.tf.exemple` : exemples et snippets supplémentaires pour cibler des sous-réseaux ou ECS (exemple)
-
-- `errored.tfstate`, `log/`, `results/` : fichiers d'état et données de sortie (logs, résultats)
-
-Remarque : certaines ressources (par ex. volumes EBS recherchés via `data.aws_ebs_volumes`) sont attendues par les alarmes EBS/commentaires — adaptez ou fournissez les data sources si nécessaire.
-# AWS Fault Injection Service
-
-## Du Plan de Reprise d’Activité à l’expérimentation du Chaos
-
-Implémenter AWS FIS pour valider la résilience dans le Cloud. Ce dépôt fournit un exemple de template FIS, un dashboard CloudWatch et des alarmes pour arrêter l'expérience si des seuils critiques sont atteints.
-
-### But
-
-- Exemple de template AWS FIS pour tester la résilience : terminer une instance EC2 d'un ASG et injecter de la latence I/O sur les volumes EBS.
-- Fournit également un dashboard CloudWatch et des alarmes (certaines alarmes EBS sont commentées par défaut).
-
-### Prérequis
-
-- Terraform (>= 1.0)
-- AWS CLI configuré (credentials / profile) ou variables d'environnement AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY
-- Compte AWS avec droits suffisants pour créer IAM, EC2, CloudWatch, FIS, S3, RDS, ALB, CloudWatch Logs
-
-### Ce qui est déployé (fichiers principaux)
-
-Voici une vue synthétique des fichiers et des ressources qu'ils définissent dans ce projet :
-
-- `fis.tf`
-  - `aws_fis_experiment_template.web_instance_failure` : template FIS principal
-    - targets : `WebInstances` (instances taggées `Service=web`), `Volumes-Target-azA` et `Volumes-Target-azB` (volumes EBS filtrés par zone/tags)
-    - actions : `TerminateInstance` (terminer une instance) et `Volume_IO_Latency_*` (injecter latence I/O sur volumes EBS)
-    - stop_conditions : références vers alarmes CloudWatch (ALB, RDS, et possibilité d'alarmes EBS)
-    - configuration de rapport d'expérience (S3) et logs CloudWatch
-
-- `cloudwatch.tf`
-  - `aws_cloudwatch_dashboard.fis_dashboard` : dashboard CloudWatch pour monitoring FIS
-  - alarmes : `aws_cloudwatch_metric_alarm.alb_5xx_alarm`, `alb_latency_alarm`, `rds_connections_alarm`
-  - (optionnel/commenté) alarmes EBS pour latence read/write (créées par `for_each` sur les volumes)
-
-- `main.tf`
-  - VPC, subnets, security groups, ALB (`aws_lb.web_alb`), target group (`aws_lb_target_group.web_tg`), launch template (`aws_launch_template.web_lt`) et autoscaling group (`aws_autoscaling_group.web_asg`)
-
-- `iam.tf`
-  - rôle IAM pour FIS (`aws_iam_role.fis_experiment_role`) et policies requises
-
-- `keypair.tf`, `provider.tf`, `local.tf`, `data.tf`, `output.tf` : configuration AWS, données (AMIs, volumes...), outputs et variables locales
-
-- `userdata.sh` : script d'init pour les instances
-
-- `fis_subnet.tf`, `fis_ecs.tf.exemple` : exemples et snippets supplémentaires pour cibler des sous-réseaux ou ECS (exemple)
-
-- `errored.tfstate`, `log/`, `results/` : fichiers d'état et données de sortie (logs, résultats)
-
-Remarque : certaines ressources (par ex. volumes EBS recherchés via `data.aws_ebs_volumes`) sont attendues par les alarmes EBS/commentaires — adaptez ou fournissez les data sources si nécessaire.
-
-## Arborescence du dépôt
-
-Arbre simplifié des fichiers à la racine du projet :
-
-```text
-.git/
-.gitignore
-.terraform/
-.terraform.lock.hcl
-README.md
-cloudwatch.tf
-data.tf
-errored.tfstate
-fis.tf
-fis_ecs.tf.exemple
-fis_subnet.tf
-iam.tf
-keypair.tf
-local.tf
-log/
-main.tf
-output.tf
-provider.tf
-results/
-userdata.sh
-```
-
-Si tu veux que je génère un arbre plus détaillé (avec fichiers dans `log/` ou `results/`), je peux lister et l'ajouter.
-
-### Points d'attention / actions manuelles possibles
-
-- Alarmes EBS
-  - Les alarmes EBS sont commentées dans `cloudwatch.tf`. Si vous souhaitez que les `stop_conditions` dynamiques dans `fis.tf` soient valides, décommentez les ressources `aws_cloudwatch_metric_alarm` (ebs_read_latency_alarm / ebs_write_latency_alarm) et exécutez `terraform apply`.
-  - Alternative : si vous ne voulez pas créer ces alarmes, supprimez les blocs `dynamic "stop_condition"` dans `fis.tf` pour éviter des références vides.
-
-- Permissions pour le rôle FIS
-  - L'action `aws:ebs:volume-io-latency` nécessite des permissions SSM/EC2. Assurez-vous que `aws_iam_role.fis_experiment_role` a les permissions nécessaires (ex. `ec2:Describe*`, `ec2:AttachVolume`, `ec2:DetachVolume`, `ssm:SendCommand`, `iam:PassRole`). Pour test rapide, attachez les policies managées `AmazonEC2FullAccess` et `AmazonSSMFullAccess` (à restreindre ensuite).
-
-## Exemples de commandes
-
-```bash
-# Initialiser et planifier
-terraform init
-terraform plan -var="region=eu-west-1"
-
-# Appliquer
-terraform apply -var="region=eu-west-1"
-
-# Pour déployer uniquement le dashboard et les alarmes (si modifications ciblées)
-terraform apply -target=aws_cloudwatch_dashboard.fis_dashboard -target=aws_cloudwatch_metric_alarm.alb_5xx_alarm
-```
-
-## Dépannage rapide
-
-- Erreur "Missing resource instance key" : signifie qu'on tente d'accéder à une ressource créée avec `for_each` sans index ; utiliser `aws_cloudwatch_metric_alarm.name[key]` ou générer dynamiquement les `stop_condition` (cf. `fis.tf`).
-- Erreur FIS `AuthorizationFailure` pendant une action (ex. `volume-io-latency`) : attacher aux IAM role les permissions SSM/EC2 nécessaires.
-
-### Commandes utiles (attention : opérations destructrices)
-
-```bash
-# Pour forcer suppression d'un volume EBS (danger : perte de données)
-aws ec2 detach-volume --volume-id vol-0f67b384aa1bd9ee7 --force --region eu-west-1
-aws ec2 wait volume-available --volume-ids vol-0f67b384aa1bd9ee7 --region eu-west-1
-aws ec2 delete-volume --volume-id vol-0f67b384aa1bd9ee7 --region eu-west-1
-
-# Pour supprimer un secret immédiatement (Secrets Manager)
-aws secretsmanager delete-secret --secret-id <nom-ou-arn> --force-delete-without-recovery --region eu-west-1
-```
-
-## Bonnes pratiques
-
-- Restreindre les permissions IAM du rôle FIS à un policy minimal pour production.
-- Tester d'abord sur un compte ou environnement non critique.
-- Vérifier que les tags `Service=web` existent bien sur vos volumes/instances attendus.
-
-## Auteurs
-
-- Benjamin TOULOT-VERDIER — Devoteam A Cloud
-
-  - Société : Devoteam A Cloud
-  - Site : [https://www.devoteam.com](https://www.devoteam.com)
-  - Pour toute question ou contribution : ouvrez une issue dans ce dépôt ou contactez l'auteur via les canaux internes de votre organisation.
-
-## Liens utiles
-
-- Terraform resource (AWS FIS experiment template) : [https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/fis_experiment_template](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/fis_experiment_template)
-- AWS Fault Injection Service (FIS) — documentation utilisateur : [https://docs.aws.amazon.com/fis/latest/userguide/what-is-fis.html](https://docs.aws.amazon.com/fis/latest/userguide/what-is-fis.html)
-- CloudWatch Metric Alarm (docs) : [https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html)
+## 🔗 Liens utiles / Useful Links
+| 🇫🇷 Français                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | 🇬🇧 English                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| - Terraform resource (AWS FIS experiment template) : [https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/fis_experiment_template](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/fis_experiment_template)<br>- AWS Fault Injection Service (FIS) — documentation utilisateur : [https://docs.aws.amazon.com/fis/latest/userguide/what-is-fis.html](https://docs.aws.amazon.com/fis/latest/userguide/what-is-fis.html)<br>- CloudWatch Metric Alarm (docs) : [https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html) | - Terraform resource (AWS FIS experiment template): [https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/fis_experiment_template](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/fis_experiment_template)<br>- AWS Fault Injection Service (FIS) — user guide: [https://docs.aws.amazon.com/fis/latest/userguide/what-is-fis.html](https://docs.aws.amazon.com/fis/latest/userguide/what-is-fis.html)<br>- CloudWatch Metric Alarm (docs): [https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/AlarmThatSendsEmail.html) |
